@@ -1,4 +1,4 @@
 OTHER_FILES += \
-            ../mufexprtkbackend/src/mufexprtkbackend.h \
-            ../mufexprtkbackend/src/mufexprtkbackend.cpp \
-            ../mufexprtkbackend/include/exprtk.hpp 
+            ../MufExprtkBackend/src/mufexprtkbackend.h \
+            ../MufExprtkBackend/src/mufexprtkbackend.cpp \
+            ../MufExprtkBackend/include/exprtk.hpp
