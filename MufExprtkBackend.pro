@@ -6,7 +6,7 @@
 
 QT       += core gui widgets
 
-DESTDIR = ../StrahCalc/lib
+DESTDIR = ../../StrahCalc/lib
 
 TARGET = MufExprtkBackend
 TEMPLATE = lib
