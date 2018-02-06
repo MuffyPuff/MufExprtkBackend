@@ -44,6 +44,7 @@ public:
 
 	bool            addVariable(const QString& name, const double& value);
 	bool            addConstant(const QString& name, const double& value);
+	QList<symbol_t> getVariables();
 
 	void            run();
 

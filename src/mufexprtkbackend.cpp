@@ -132,3 +132,9 @@ MufExprtkBackend::inputChanged(const QString& in)
 	_condnewinfoavail.wakeOne();
 	return true;
 }
+
+QList<MufExprtkBackend::symbol_t>
+MufExprtkBackend::getVariables()
+{
+	return _variables;
+}
