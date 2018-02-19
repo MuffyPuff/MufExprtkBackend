@@ -44,6 +44,10 @@ public:
 
 	bool            addVariable(const QString& name, const double& value);
 	bool            addConstant(const QString& name, const double& value);
+	bool            addString(const QString& name, const QString& value);
+	bool            addVector(const QString& name, const QVector<double>& value);
+	bool            addFunction(const QString& name, const QString& body,
+	                            const QStringList& vars);
 	QList<symbol_t> getVariables();
 
 	void            run();

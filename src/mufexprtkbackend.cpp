@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <QStringLiteral>
 
-#include "exprtk.hpp"
+#include "../include/exprtk.hpp"
 
 MufExprtkBackend::MufExprtkBackend(QObject* parent, const QString& in)
         : QThread(parent), _input(in), _hasnewinfo(false), _abort(false)
@@ -34,6 +34,7 @@ MufExprtkBackend::addVariable(const QString& name, const double& value)
 {
 	QMutexLocker mutexlocker(&_mutex);
 	_variables.append(symbol_t(name.toStdString(), new double(value)));
+//	_symbol_table->add_variable(name.toStdString(), value);
 	_hasnewinfo = true;
 	_condnewinfoavail.wakeOne();
 	return true;
@@ -46,6 +47,36 @@ MufExprtkBackend::addConstant(const QString& name, const double& value)
 	_constants.append(symbol_t(name.toStdString(), new double(value)));
 	_hasnewinfo = true;
 	_condnewinfoavail.wakeOne();
+	return true;
+}
+
+bool
+MufExprtkBackend::addString(const QString& name, const QString& value)
+{
+	Q_UNUSED(name)
+	Q_UNUSED(value)
+
+	return true;
+}
+
+bool
+MufExprtkBackend::addVector(const QString& name, const QVector<double>& value)
+{
+	Q_UNUSED(name)
+	Q_UNUSED(value)
+
+	return true;
+}
+
+bool
+MufExprtkBackend::addFunction(const QString& name,
+                              const QString& body,
+                              const QStringList& vars)
+{
+	Q_UNUSED(name)
+	Q_UNUSED(body)
+	Q_UNUSED(vars)
+
 	return true;
 }
 
