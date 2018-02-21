@@ -36,11 +36,14 @@ bool
 MufExprtkBackend::addVariable(const QString& name, const num_t& value)
 {
 	QMutexLocker mutexlocker(&_mutex);
+	qDebug() << name << value;
 	_variables.append(
 	        num_sym_t(
 	                name.toStdString(),
 	                value));
 //	_symbol_table->add_variable(name.toStdString(), value);
+//	qDebug() <<  QString::fromStdString(_variables.at(0).name) << *_variables.at(
+//	                 0).value;
 	_hasnewinfo = true;
 	_condnewinfoavail.wakeOne();
 	return true;
@@ -112,9 +115,13 @@ MufExprtkBackend::deepcopy(
         const QList<symbol_t<T>>& in,
         QList<symbol_t<T>>* out)
 {
+//	qDebug() << "this should happen";
 	destroy(out);
-	foreach (symbol_t<T> el, in) {
-		out->append(symbol_t<T>(el.name, *el.value));
+	if (in.size() > 0) {
+//		qDebug() << "this should happen";
+		foreach (symbol_t<T> el, in) {
+			out->append(symbol_t<T>(el.name, *el.value));
+		}
 	}
 	return out;
 }
@@ -124,17 +131,24 @@ template<typename T>
 void
 MufExprtkBackend::destroy(QList<symbol_t<T>>* in)
 {
-	foreach (symbol_t<T> el, *in) {
-		delete el.value;
-		el.value = nullptr;
+	if (in->size() > 0) {
+//		qDebug() << "this should happen - d";
+		foreach (symbol_t<T> el, *in) {
+//			qDebug() << "this should happen - d";
+			delete el.value;
+//			qDebug() << "this should happen - d";
+			el.value = nullptr;
+//			qDebug() << "this should happen - d";
+		}
+		in->clear();
+//		qDebug() << "this should happen - d";
 	}
-	in->clear();
 }
 
 void
 MufExprtkBackend::run()
 {
-	qDebug() << "calculating";
+//	qDebug() << "calculating";
 	typedef typename compositor_t::function         function_t;
 
 	symbol_table_t symbol_table;
@@ -147,13 +161,17 @@ MufExprtkBackend::run()
 	QList<str_sym_t> strings;
 	QList<vec_sym_t> vectors;
 	QString input;
-//	parser.enable_unknown_symbol_resolver();
+	parser.enable_unknown_symbol_resolver();
 
 	for (;;) {
+		qDebug() << "calculating";
+		bool abort = false;
+		bool hasnewinfo = false;
+		double r = false;
 		_mutex.lock();
-		bool abrt = _abort;
+		abort = _abort;
 		_mutex.unlock();
-		if (abrt) {
+		if (abort) {
 			return;
 		}
 
@@ -176,6 +194,10 @@ MufExprtkBackend::run()
 		deepcopy(_strings, &strings);
 		deepcopy(_vectors, &vectors);
 		functions = _functions;
+//		qDebug() << "loc:" << QString::fromStdString(variables.at(
+//		                        0).name) << *variables.at(0).value;
+//		qDebug() << "glob:" << QString::fromStdString(_variables.at(
+//		                        0).name) << *_variables.at(0).value;
 
 		_hasnewinfo = false;
 		_mutex.unlock();
@@ -210,12 +232,13 @@ MufExprtkBackend::run()
 				error_list.prepend(parser.get_error(i - 1));
 			}
 			emit error();
-			return;
+			_mutex.lock();
+			goto cleanup;
 		}
 
 		_mutex.lock();
-		bool abort = _abort;
-		bool hasnewinfo = _hasnewinfo;
+		abort = _abort;
+		hasnewinfo = _hasnewinfo;
 		_mutex.unlock();
 
 		if (abort) {
@@ -224,14 +247,53 @@ MufExprtkBackend::run()
 		if (hasnewinfo) {
 			continue;
 		}
-		// TODO: update variables et al
-
-		output = expression.value();
-		emit resultAvailable(output);
-//		return;
+		r = expression.value();
+//		qDebug() << "loc:" << QString::fromStdString(variables.at(
+//		                        0).name) << *variables.at(0).value;
+//		qDebug() << "glob:" << QString::fromStdString(_variables.at(
+//		                        0).name) << *_variables.at(0).value;
 
 		_mutex.lock();
+		// TODO: update variables et al
+		deepcopy(variables, &_variables);
+		deepcopy(constants, &_constants);
+		deepcopy(strings, &_strings);
+		deepcopy(vectors, &_vectors);
+//		_hasnewinfo = true;
+//		qDebug() << "loc:" << QString::fromStdString(variables.at(
+//		                        0).name) << *variables.at(0).value;
+//		qDebug() << "glob:" << QString::fromStdString(_variables.at(
+//		                        0).name) << *_variables.at(0).value;
+		output = r;
+		_mutex.unlock();
+
+		emit resultAvailable(output);
+cleanup:
+		_mutex.lock();
+		abort = _abort;
+		hasnewinfo = _hasnewinfo;
+		_mutex.unlock();
+
+		if (abort) {
+			return;
+		}
+		if (hasnewinfo) {
+			continue;
+		}
+//		qDebug() << "this happens";
+		destroy<num_t>(&variables);
+		destroy<num_t>(&constants);
+		destroy<vec_t>(&vectors);
+		destroy<str_t>(&strings);
+
+//		qDebug() << "this happens";
+//		qDebug() << "this should happen";
+//		return; // wtf am i doing
+
+		_mutex.lock();
+//		qDebug() << "this should happen";
 		_condnewinfoavail.wait(&_mutex);
+//		qDebug() << "this might happen";
 		_mutex.unlock();
 	}
 }
@@ -260,6 +322,8 @@ MufExprtkBackend::getFunctions()
 QList<MufExprtkBackend::num_sym_t>
 MufExprtkBackend::getVariables()
 {
+//	qDebug() << QString::fromStdString(_variables.at(0).name) << *_variables.at(
+//	                 0).value;
 	return _variables;
 }
 

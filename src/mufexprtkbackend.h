@@ -59,7 +59,7 @@ protected:
 public: // temp
 	template<typename T>
 	struct symbol_t {
-		symbol_t(str_t n, const T& v)
+		symbol_t(const str_t& n, const T& v)
 		        : name(n), value(new T(v)) {}
 		str_t           name;
 		T*              value;
