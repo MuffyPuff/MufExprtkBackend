@@ -17,12 +17,15 @@ MufExprtkBackend::~MufExprtkBackend()
 	_mutex.lock();
 	_abort = true;
 
-	foreach (symbol_t var, _variables) {
-		delete var.second;
-	}
-	foreach (symbol_t con, _constants) {
-		delete con.second;
-	}
+	//TODO: cast to symbol_t
+//	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_variables));
+//	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_constants));
+//	destroy<vec_t>(static_cast<QList<symbol_t<vec_t>>*>(&_vectors));
+//	destroy<str_t>(static_cast<QList<symbol_t<str_t>>*>(&_strings));
+	destroy<num_t>(&_variables);
+	destroy<num_t>(&_constants);
+	destroy<vec_t>(&_vectors);
+	destroy<str_t>(&_strings);
 
 	_condnewinfoavail.wakeOne();
 	_mutex.unlock();
@@ -30,10 +33,13 @@ MufExprtkBackend::~MufExprtkBackend()
 }
 
 bool
-MufExprtkBackend::addVariable(const QString& name, const double& value)
+MufExprtkBackend::addVariable(const QString& name, const num_t& value)
 {
 	QMutexLocker mutexlocker(&_mutex);
-	_variables.append(symbol_t(name.toStdString(), new double(value)));
+	_variables.append(
+	        num_sym_t(
+	                name.toStdString(),
+	                value));
 //	_symbol_table->add_variable(name.toStdString(), value);
 	_hasnewinfo = true;
 	_condnewinfoavail.wakeOne();
@@ -41,10 +47,13 @@ MufExprtkBackend::addVariable(const QString& name, const double& value)
 }
 
 bool
-MufExprtkBackend::addConstant(const QString& name, const double& value)
+MufExprtkBackend::addConstant(const QString& name, const num_t& value)
 {
 	QMutexLocker mutexlocker(&_mutex);
-	_constants.append(symbol_t(name.toStdString(), new double(value)));
+	_constants.append(
+	        num_sym_t(
+	                name.toStdString(),
+	                value));
 	_hasnewinfo = true;
 	_condnewinfoavail.wakeOne();
 	return true;
@@ -53,18 +62,26 @@ MufExprtkBackend::addConstant(const QString& name, const double& value)
 bool
 MufExprtkBackend::addString(const QString& name, const QString& value)
 {
-	Q_UNUSED(name)
-	Q_UNUSED(value)
-
+	QMutexLocker mutexlocker(&_mutex);
+	_strings.append(
+	        str_sym_t(
+	                name.toStdString(),
+	                value.toStdString()));
+	_hasnewinfo = true;
+	_condnewinfoavail.wakeOne();
 	return true;
 }
 
 bool
-MufExprtkBackend::addVector(const QString& name, const QVector<double>& value)
+MufExprtkBackend::addVector(const QString& name, const QVector<num_t>& values)
 {
-	Q_UNUSED(name)
-	Q_UNUSED(value)
-
+	QMutexLocker mutexlocker(&_mutex);
+	_vectors.append(
+	        vec_sym_t(
+	                name.toStdString(),
+	                values.toStdVector()));
+	_hasnewinfo = true;
+	_condnewinfoavail.wakeOne();
 	return true;
 }
 
@@ -73,23 +90,62 @@ MufExprtkBackend::addFunction(const QString& name,
                               const QString& body,
                               const QStringList& vars)
 {
-	Q_UNUSED(name)
-	Q_UNUSED(body)
-	Q_UNUSED(vars)
-
+	QMutexLocker mutexlocker(&_mutex);
+	QList<str_t> std_vars;
+	foreach (QString el, vars) {
+		std_vars.append(el.toStdString());
+	}
+	_functions.append(
+	        fun_sym_t(
+	                name.toStdString(),
+	                body.toStdString(),
+	                std_vars));
+	_hasnewinfo = true;
+	_condnewinfoavail.wakeOne();
 	return true;
+}
+
+// *INDENT-OFF*
+template<typename T>
+QList<MufExprtkBackend::symbol_t<T>>*
+MufExprtkBackend::deepcopy(
+        const QList<symbol_t<T>>& in,
+        QList<symbol_t<T>>* out)
+{
+	destroy(out);
+	foreach (symbol_t<T> el, in) {
+		out->append(symbol_t<T>(el.name, *el.value));
+	}
+	return out;
+}
+// *INDENT-ON*
+
+template<typename T>
+void
+MufExprtkBackend::destroy(QList<symbol_t<T>>* in)
+{
+	foreach (symbol_t<T> el, *in) {
+		delete el.value;
+		el.value = nullptr;
+	}
+	in->clear();
 }
 
 void
 MufExprtkBackend::run()
 {
 	qDebug() << "calculating";
+	typedef typename compositor_t::function         function_t;
 
 	symbol_table_t symbol_table;
 	expression_t expression;
 	parser_t parser;
-	QList<symbol_t> variables;
-	QList<symbol_t> constants;
+	compositor_t compositor(symbol_table);
+	QList<fun_sym_t> functions;
+	QList<num_sym_t> variables;
+	QList<num_sym_t> constants;
+	QList<str_sym_t> strings;
+	QList<vec_sym_t> vectors;
 	QString input;
 //	parser.enable_unknown_symbol_resolver();
 
@@ -104,21 +160,48 @@ MufExprtkBackend::run()
 		// get vars and input
 		_mutex.lock();
 		input = _input;
-		variables = _variables;
-		constants = _constants;
+//		functions = _functions;
+//		variables = _variables;
+//		constants = _constants;
+//		strings = _strings;
+//		vectors = _vectors;
+
+//		foreach (num_sym_t var, _variables) {
+//			variables.append(num_sym_t(var.name, new num_t(*var.value)));
+//		}
+
+		//TODO: cast to symbol_t?
+		deepcopy(_variables, &variables);
+		deepcopy(_constants, &constants);
+		deepcopy(_strings, &strings);
+		deepcopy(_vectors, &vectors);
+		functions = _functions;
+
 		_hasnewinfo = false;
 		_mutex.unlock();
 
-		foreach (symbol_t var, variables) {
-			symbol_table.add_variable(var.first, *var.second);
+		foreach (fun_sym_t fun, functions) {
+			function_t fn = function_t()
+			                .name(fun.name)
+			                .expression(fun.body);
+			foreach (str_t var, fun.vars) {
+				fn.var(var);
+			}
+			compositor.add(fn);
 		}
-
-		foreach (symbol_t con, constants) {
-			symbol_table.add_constant(con.first, *con.second);
+		foreach (num_sym_t var, variables) {
+			symbol_table.add_variable(var.name, *var.value);
 		}
-
+		foreach (num_sym_t con, constants) {
+			symbol_table.add_constant(con.name, *con.value);
+		}
+		foreach (str_sym_t str, strings) {
+			symbol_table.add_stringvar(str.name, *str.value);
+		}
+		foreach (vec_sym_t vec, vectors) {
+			symbol_table.add_vector(vec.name, *vec.value);
+		}
 		symbol_table.add_constants();
-
 		expression.register_symbol_table(symbol_table);
 
 		if (!parser.compile(input.toStdString(), expression)) {
@@ -141,6 +224,8 @@ MufExprtkBackend::run()
 		if (hasnewinfo) {
 			continue;
 		}
+		// TODO: update variables et al
+
 		output = expression.value();
 		emit resultAvailable(output);
 //		return;
@@ -164,8 +249,28 @@ MufExprtkBackend::inputChanged(const QString& in)
 	return true;
 }
 
-QList<MufExprtkBackend::symbol_t>
+//using namespace MufExprtkBackend;
+
+QList<MufExprtkBackend::fun_sym_t>
+MufExprtkBackend::getFunctions()
+{
+	return _functions;
+}
+
+QList<MufExprtkBackend::num_sym_t>
 MufExprtkBackend::getVariables()
 {
 	return _variables;
+}
+
+QList<MufExprtkBackend::str_sym_t>
+MufExprtkBackend::getStrings()
+{
+	return _strings;
+}
+
+QList<MufExprtkBackend::vec_sym_t>
+MufExprtkBackend::getVectors()
+{
+	return _vectors;
 }
