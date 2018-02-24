@@ -232,7 +232,7 @@ MufExprtkBackend::run()
 				error_list.prepend(parser.get_error(i - 1));
 			}
 			emit error();
-			_mutex.lock();
+//			_mutex.lock();
 			goto cleanup;
 		}
 
