@@ -103,6 +103,8 @@ MufExprtkBackend::addFunction(const QString& name,
 	                name.toStdString(),
 	                body.toStdString(),
 	                std_vars));
+//	qDebug() << _functions.size();
+//	qDebug() << "vars:" << vars.size();
 	_hasnewinfo = true;
 	_condnewinfoavail.wakeOne();
 	return true;
@@ -151,10 +153,10 @@ MufExprtkBackend::run()
 //	qDebug() << "calculating";
 	typedef typename compositor_t::function         function_t;
 
-	symbol_table_t symbol_table;
+//	symbol_table_t& symbol_table;
 	expression_t expression;
 	parser_t parser;
-	compositor_t compositor(symbol_table);
+//	compositor_t compositor(symbol_table);
 	QList<fun_sym_t> functions;
 	QList<num_sym_t> variables;
 	QList<num_sym_t> constants;
@@ -194,6 +196,7 @@ MufExprtkBackend::run()
 		deepcopy(_strings, &strings);
 		deepcopy(_vectors, &vectors);
 		functions = _functions;
+//		qDebug() << "functions.size()" << functions.size();
 //		qDebug() << "loc:" << QString::fromStdString(variables.at(
 //		                        0).name) << *variables.at(0).value;
 //		qDebug() << "glob:" << QString::fromStdString(_variables.at(
@@ -201,16 +204,28 @@ MufExprtkBackend::run()
 
 		_hasnewinfo = false;
 		_mutex.unlock();
+		compositor_t compositor;
 
 		foreach (fun_sym_t fun, functions) {
 			function_t fn = function_t()
 			                .name(fun.name)
 			                .expression(fun.body);
+//			qDebug() << QString::fromStdString(fun.name) <<
+//			         QString::fromStdString(fun.body);
 			foreach (str_t var, fun.vars) {
 				fn.var(var);
+//				qDebug() << QString::fromStdString(var);
 			}
+//			qDebug() << "vars added:" << fn.v_.size();
+//			qDebug() << "vars:";
+//			foreach (std::string v, fn.v_) {
+//				qDebug() << QString::fromStdString(v);
+//			}
 			compositor.add(fn);
 		}
+		symbol_table_t& symbol_table = compositor.symbol_table();
+//		qDebug() << "functions in syt:" << symbol_table.function_count();
+//		qDebug() << "functions in comp:" << compositor.symbol_table().function_count();
 		foreach (num_sym_t var, variables) {
 			symbol_table.add_variable(var.name, *var.value);
 		}
@@ -228,8 +243,10 @@ MufExprtkBackend::run()
 
 		if (!parser.compile(input.toStdString(), expression)) {
 			qDebug() << "expression compilation error...";
+//			qDebug() << QString::fromStdString(parser.error());
 			for (int i = parser.error_count(); i > 0; --i) {
 				error_list.prepend(parser.get_error(i - 1));
+				qDebug() << QString::fromStdString(parser.get_error(i - 1).diagnostic);
 			}
 			emit error();
 //			_mutex.lock();
@@ -255,6 +272,7 @@ MufExprtkBackend::run()
 
 		_mutex.lock();
 		// TODO: update variables et al
+//		compositor.clear();
 		deepcopy(variables, &_variables);
 		deepcopy(constants, &_constants);
 		deepcopy(strings, &_strings);
