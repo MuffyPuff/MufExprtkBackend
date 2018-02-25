@@ -63,10 +63,10 @@ MufExprtkBackend::addConstant(const QString& name, const num_t& value)
 }
 
 bool
-MufExprtkBackend::addString(const QString& name, const QString& value)
+MufExprtkBackend::addStringvar(const QString& name, const QString& value)
 {
 	QMutexLocker mutexlocker(&_mutex);
-	_strings.append(
+	_stringvars.append(
 	        str_sym_t(
 	                name.toStdString(),
 	                value.toStdString()));
@@ -160,7 +160,7 @@ MufExprtkBackend::run()
 	QList<fun_sym_t> functions;
 	QList<num_sym_t> variables;
 	QList<num_sym_t> constants;
-	QList<str_sym_t> strings;
+	QList<str_sym_t> stringvars;
 	QList<vec_sym_t> vectors;
 	QString input;
 	parser.enable_unknown_symbol_resolver();
@@ -183,7 +183,7 @@ MufExprtkBackend::run()
 //		functions = _functions;
 //		variables = _variables;
 //		constants = _constants;
-//		strings = _strings;
+//		stringvars = _stringvars;
 //		vectors = _vectors;
 
 //		foreach (num_sym_t var, _variables) {
@@ -193,7 +193,7 @@ MufExprtkBackend::run()
 		//TODO: cast to symbol_t?
 		deepcopy(_variables, &variables);
 		deepcopy(_constants, &constants);
-		deepcopy(_strings, &strings);
+		deepcopy(_stringvars, &stringvars);
 		deepcopy(_vectors, &vectors);
 		functions = _functions;
 //		qDebug() << "functions.size()" << functions.size();
@@ -232,7 +232,7 @@ MufExprtkBackend::run()
 		foreach (num_sym_t con, constants) {
 			symbol_table.add_constant(con.name, *con.value);
 		}
-		foreach (str_sym_t str, strings) {
+		foreach (str_sym_t str, stringvars) {
 			symbol_table.add_stringvar(str.name, *str.value);
 		}
 		foreach (vec_sym_t vec, vectors) {
@@ -275,7 +275,7 @@ MufExprtkBackend::run()
 //		compositor.clear();
 		deepcopy(variables, &_variables);
 		deepcopy(constants, &_constants);
-		deepcopy(strings, &_strings);
+		deepcopy(stringvars, &_stringvars);
 		deepcopy(vectors, &_vectors);
 //		_hasnewinfo = true;
 //		qDebug() << "loc:" << QString::fromStdString(variables.at(
@@ -345,8 +345,14 @@ MufExprtkBackend::getVariables()
 	return _variables;
 }
 
+QList<MufExprtkBackend::num_sym_t>
+MufExprtkBackend::getConstants()
+{
+	return _constants;
+}
+
 QList<MufExprtkBackend::str_sym_t>
-MufExprtkBackend::getStrings()
+MufExprtkBackend::getStringvars()
 {
 	return _strings;
 }
