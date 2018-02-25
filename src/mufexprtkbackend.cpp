@@ -21,11 +21,11 @@ MufExprtkBackend::~MufExprtkBackend()
 //	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_variables));
 //	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_constants));
 //	destroy<vec_t>(static_cast<QList<symbol_t<vec_t>>*>(&_vectors));
-//	destroy<str_t>(static_cast<QList<symbol_t<str_t>>*>(&_strings));
-	destroy<num_t>(&_variables);
-	destroy<num_t>(&_constants);
-	destroy<vec_t>(&_vectors);
-	destroy<str_t>(&_strings);
+//	destroy<str_t>(static_cast<QList<symbol_t<str_t>>*>(&_stringvars));
+//	destroy<num_t>(&_variables);
+//	destroy<num_t>(&_constants);
+//	destroy<vec_t>(&_vectors);
+//	destroy<str_t>(&_stringvars);
 
 	_condnewinfoavail.wakeOne();
 	_mutex.unlock();
@@ -63,10 +63,10 @@ MufExprtkBackend::addConstant(const QString& name, const num_t& value)
 }
 
 bool
-MufExprtkBackend::addString(const QString& name, const QString& value)
+MufExprtkBackend::addStringvar(const QString& name, const QString& value)
 {
 	QMutexLocker mutexlocker(&_mutex);
-	_strings.append(
+	_stringvars.append(
 	        str_sym_t(
 	                name.toStdString(),
 	                value.toStdString()));
@@ -122,7 +122,7 @@ MufExprtkBackend::deepcopy(
 	if (in.size() > 0) {
 //		qDebug() << "this should happen";
 		foreach (symbol_t<T> el, in) {
-			out->append(symbol_t<T>(el.name, *el.value));
+			out->append(symbol_t<T>(el.name, T(el.value)));
 		}
 	}
 	return out;
@@ -135,13 +135,13 @@ MufExprtkBackend::destroy(QList<symbol_t<T>>* in)
 {
 	if (in->size() > 0) {
 //		qDebug() << "this should happen - d";
-		foreach (symbol_t<T> el, *in) {
-//			qDebug() << "this should happen - d";
-			delete el.value;
-//			qDebug() << "this should happen - d";
-			el.value = nullptr;
-//			qDebug() << "this should happen - d";
-		}
+//		foreach (symbol_t<T> el, *in) {
+////                    qDebug() << "this should happen - d";
+//			delete el.value;
+////                    qDebug() << "this should happen - d";
+//			el.value = nullptr;
+////                    qDebug() << "this should happen - d";
+//		}
 		in->clear();
 //		qDebug() << "this should happen - d";
 	}
@@ -160,7 +160,7 @@ MufExprtkBackend::run()
 	QList<fun_sym_t> functions;
 	QList<num_sym_t> variables;
 	QList<num_sym_t> constants;
-	QList<str_sym_t> strings;
+	QList<str_sym_t> stringvars;
 	QList<vec_sym_t> vectors;
 	QString input;
 	parser.enable_unknown_symbol_resolver();
@@ -183,7 +183,7 @@ MufExprtkBackend::run()
 //		functions = _functions;
 //		variables = _variables;
 //		constants = _constants;
-//		strings = _strings;
+//		stringvars = _stringvars;
 //		vectors = _vectors;
 
 //		foreach (num_sym_t var, _variables) {
@@ -193,14 +193,14 @@ MufExprtkBackend::run()
 		//TODO: cast to symbol_t?
 		deepcopy(_variables, &variables);
 		deepcopy(_constants, &constants);
-		deepcopy(_strings, &strings);
+		deepcopy(_stringvars, &stringvars);
 		deepcopy(_vectors, &vectors);
 		functions = _functions;
 //		qDebug() << "functions.size()" << functions.size();
 //		qDebug() << "loc:" << QString::fromStdString(variables.at(
-//		                        0).name) << *variables.at(0).value;
+//		                        0).name) << variables.at(0).value;
 //		qDebug() << "glob:" << QString::fromStdString(_variables.at(
-//		                        0).name) << *_variables.at(0).value;
+//		                        0).name) << _variables.at(0).value;
 
 		_hasnewinfo = false;
 		_mutex.unlock();
@@ -227,21 +227,27 @@ MufExprtkBackend::run()
 //		qDebug() << "functions in syt:" << symbol_table.function_count();
 //		qDebug() << "functions in comp:" << compositor.symbol_table().function_count();
 		foreach (num_sym_t var, variables) {
-			symbol_table.add_variable(var.name, *var.value);
+			symbol_table.add_variable(var.name, var.value);
 		}
 		foreach (num_sym_t con, constants) {
-			symbol_table.add_constant(con.name, *con.value);
+			symbol_table.add_constant(con.name, con.value);
 		}
-		foreach (str_sym_t str, strings) {
-			symbol_table.add_stringvar(str.name, *str.value);
+		foreach (str_sym_t str, stringvars) {
+			symbol_table.add_stringvar(str.name, str.value);
 		}
 		foreach (vec_sym_t vec, vectors) {
-			symbol_table.add_vector(vec.name, *vec.value);
+			symbol_table.add_vector(vec.name, vec.value);
 		}
+		qDebug() << "vars in syt:" << symbol_table.variable_count();
+		qDebug() << "vars in comp:" << compositor.symbol_table().variable_count();
 		symbol_table.add_constants();
 		expression.register_symbol_table(symbol_table);
+		qDebug() << "set up syt done";
+		bool b = false;
+		b = parser.compile(input.toStdString(), expression);
+		qDebug() << "parsed";
 
-		if (!parser.compile(input.toStdString(), expression)) {
+		if (!b) {
 			qDebug() << "expression compilation error...";
 //			qDebug() << QString::fromStdString(parser.error());
 			for (int i = parser.error_count(); i > 0; --i) {
@@ -264,19 +270,66 @@ MufExprtkBackend::run()
 		if (hasnewinfo) {
 			continue;
 		}
+		qDebug() << "before .value()";
 		r = expression.value();
 //		qDebug() << "loc:" << QString::fromStdString(variables.at(
-//		                        0).name) << *variables.at(0).value;
+//		                        0).name) << variables.at(0).value;
 //		qDebug() << "glob:" << QString::fromStdString(_variables.at(
-//		                        0).name) << *_variables.at(0).value;
+//		                        0).name) << _variables.at(0).value;
 
 		_mutex.lock();
 		// TODO: update variables et al
 //		compositor.clear();
 		deepcopy(variables, &_variables);
 		deepcopy(constants, &_constants);
-		deepcopy(strings, &_strings);
+		deepcopy(stringvars, &_stringvars);
 		deepcopy(vectors, &_vectors);
+//		_variables.clear();
+//		_constants.clear();
+//		_stringvars.clear();
+//		_vectors.clear();
+		// *INDENT-OFF*
+//		{
+////		qDebug("yo");
+//		std::list<std::string> l{};
+//		symbol_table.get_variable_list(l);
+//		for (std::string el : l) {
+////			qDebug() << QString::fromStdString(el) << symbol_table.get_variable(el)->value();
+//			if (!symbol_table.is_constant_node(el)) {
+//				_variables.append(
+//				        symbol_t<num_t>(
+//				                el,
+//				                symbol_table.get_variable(el)->value()));
+//				qDebug() << QString::fromStdString(el) << symbol_table.get_variable(el)->value();
+//			} else {
+////				_constants.append(
+////				        symbol_t<num_t>(
+////				                el,
+////				                symbol_table.get_variable(el)->value()));
+//			}
+//		}
+//		l.clear();
+//		symbol_table.get_stringvar_list(l);
+//		for (auto el : l) {
+////			if (symbol_table.is_constant_string(el)) {
+////				continue;
+////			}
+//			_stringvars.append(
+//			        symbol_t<str_t>(
+//			                el,
+//			                symbol_table.get_stringvar(el)->str()));
+//		}
+//		// i give up
+//		// there is no function that returns whole vectors...
+//		// thanks exprtk /s
+//		deepcopy(vectors, &_vectors);
+//		qDebug("yottsu");
+//		}
+		// *INDENT-ON*
+//		deepcopy(variables, &_variables);
+//		deepcopy(constants, &_constants);
+//		deepcopy(stringvars, &_stringvars);
+//		deepcopy(vectors, &_vectors);
 //		_hasnewinfo = true;
 //		qDebug() << "loc:" << QString::fromStdString(variables.at(
 //		                        0).name) << *variables.at(0).value;
@@ -287,6 +340,7 @@ MufExprtkBackend::run()
 
 		emit resultAvailable(output);
 cleanup:
+		compositor.clear();
 		_mutex.lock();
 		abort = _abort;
 		hasnewinfo = _hasnewinfo;
@@ -299,10 +353,10 @@ cleanup:
 			continue;
 		}
 //		qDebug() << "this happens";
-		destroy<num_t>(&variables);
-		destroy<num_t>(&constants);
-		destroy<vec_t>(&vectors);
-		destroy<str_t>(&strings);
+//		destroy<num_t>(&variables);
+//		destroy<num_t>(&constants);
+//		destroy<vec_t>(&vectors);
+//		destroy<str_t>(&stringvars);
 
 //		qDebug() << "this happens";
 //		qDebug() << "this should happen";
@@ -345,10 +399,16 @@ MufExprtkBackend::getVariables()
 	return _variables;
 }
 
-QList<MufExprtkBackend::str_sym_t>
-MufExprtkBackend::getStrings()
+QList<MufExprtkBackend::num_sym_t>
+MufExprtkBackend::getConstants()
 {
-	return _strings;
+	return _constants;
+}
+
+QList<MufExprtkBackend::str_sym_t>
+MufExprtkBackend::getStringvars()
+{
+	return _stringvars;
 }
 
 QList<MufExprtkBackend::vec_sym_t>
