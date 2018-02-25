@@ -7,11 +7,17 @@
 *.la
 *.lai
 *.so
+*.so.1
+*.so.1.0
+*.so.1.0.0
 *.dll
 *.dylib
 
 # Qt-es
 
+object_script.*.Release
+object_script.*.Debug
+*_plugin_import.cpp
 /.qmake.cache
 /.qmake.stash
 *.pro.user
@@ -26,6 +32,11 @@ ui_*.h
 Makefile*
 *build-*
 
+
+# Qt unit tests
+target_wrapper.*
+
+
 # QtCreator
 
 *.autosave
@@ -37,3 +48,9 @@ Makefile*
 # QtCtreator CMake
 CMakeLists.txt.user*
 
+# system
+.directory
+*swp
+
+# local old files i want to keep
+*.bck
