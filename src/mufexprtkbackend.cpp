@@ -21,11 +21,11 @@ MufExprtkBackend::~MufExprtkBackend()
 //	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_variables));
 //	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_constants));
 //	destroy<vec_t>(static_cast<QList<symbol_t<vec_t>>*>(&_vectors));
-//	destroy<str_t>(static_cast<QList<symbol_t<str_t>>*>(&_strings));
+//	destroy<str_t>(static_cast<QList<symbol_t<str_t>>*>(&_stringvars));
 	destroy<num_t>(&_variables);
 	destroy<num_t>(&_constants);
 	destroy<vec_t>(&_vectors);
-	destroy<str_t>(&_strings);
+	destroy<str_t>(&_stringvars);
 
 	_condnewinfoavail.wakeOne();
 	_mutex.unlock();
@@ -302,7 +302,7 @@ cleanup:
 		destroy<num_t>(&variables);
 		destroy<num_t>(&constants);
 		destroy<vec_t>(&vectors);
-		destroy<str_t>(&strings);
+		destroy<str_t>(&stringvars);
 
 //		qDebug() << "this happens";
 //		qDebug() << "this should happen";
@@ -354,7 +354,7 @@ MufExprtkBackend::getConstants()
 QList<MufExprtkBackend::str_sym_t>
 MufExprtkBackend::getStringvars()
 {
-	return _strings;
+	return _stringvars;
 }
 
 QList<MufExprtkBackend::vec_sym_t>
