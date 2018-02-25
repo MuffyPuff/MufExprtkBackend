@@ -55,7 +55,6 @@
 #include <utility>
 #include <vector>
 
-// *INDENT-OFF*
 
 namespace exprtk
 {
@@ -4991,10 +4990,7 @@ namespace exprtk
       template <typename T>
       inline bool is_variable_node(const expression_node<T>* node)
       {
-	 qDebug("exprtk: is var node %d", node);
-	 auto t = node->type();
-	 qDebug("cond");
-	 return node && (details::expression_node<T>::e_variable == t);
+         return node && (details::expression_node<T>::e_variable == node->type());
       }
 
       template <typename T>
@@ -5115,12 +5111,8 @@ namespace exprtk
       template <typename T>
       inline bool branch_deletable(expression_node<T>* node)
       {
-	 qDebug("exprtk: is not var node %s", typeid(node).name());
-	 bool b1 = is_variable_node(node);
-	 qDebug("exprtk: is not string node");
-	 bool b2 = is_string_node  (node);
-	 return !b1 &&
-	        !b2 ;
+         return !is_variable_node(node) &&
+                !is_string_node  (node) ;
       }
 
       template <std::size_t N, typename T>
@@ -5219,7 +5211,6 @@ namespace exprtk
       template <typename T>
       inline void destroy_node(expression_node<T>*& node)
       {
-	 qDebug("exprtk: nekje random delete node %d", node);
          delete node;
          node = reinterpret_cast<expression_node<T>*>(0);
       }
@@ -6059,7 +6050,7 @@ namespace exprtk
                return std::numeric_limits<T>::quiet_NaN();
          }
 
-	 inline typename expression_node<T>::node_type type() const
+         inline typename expression_node<T>::node_type type() const
          {
             return expression_node<T>::e_conditional;
          }
@@ -15302,7 +15293,6 @@ namespace exprtk
       template <typename T>
       inline bool is_string_node(const expression_node<T>* node)
       {
-	 qDebug("exprtk: is str node");
          return node && (expression_node<T>::e_stringvar == node->type());
       }
 
@@ -17598,21 +17588,16 @@ namespace exprtk
          {}
 
         ~control_block()
-	 {
-	    qDebug("exprtk: if branch deletable destroy expr");
-	    if (expr && details::branch_deletable(expr))
+         {
+            if (expr && details::branch_deletable(expr))
             {
-	       qDebug("exprtk: destroy expr");
                destroy_node(expr);
             }
 
-	    qDebug("exprtk: if list not empty");
             if (!local_data_list.empty())
             {
-	       qDebug("exprtk: FOR(i, list size");
                for (std::size_t i = 0; i < local_data_list.size(); ++i)
                {
-		  qDebug("exprtk: switch list[i].type");
                   switch (local_data_list[i].type)
                   {
                      case e_expr      : delete reinterpret_cast<expression_ptr>(local_data_list[i].pointer);
@@ -17642,8 +17627,7 @@ namespace exprtk
          }
 
          static inline control_block* create(expression_ptr e)
-	 {
-	    qDebug("exprtk: return new ctl block");
+         {
             return new control_block(e);
          }
 
@@ -17800,22 +17784,18 @@ namespace exprtk
 
       inline void set_expression(const expression_ptr expr)
       {
-	 qDebug("exprtk: if expr");
-	 if (expr)
-	 {
-	    qDebug("exprtk: if ctl blck");
-	    if (control_block_)
-	    {
-	       if (0 == --control_block_->ref_count)
-	       {
-		  qDebug("exprtk: delete ctl block %d", control_block_);
-		  delete control_block_;
-	       }
-	    }
+         if (expr)
+         {
+            if (control_block_)
+            {
+               if (0 == --control_block_->ref_count)
+               {
+                  delete control_block_;
+               }
+            }
 
-	    qDebug("exprtk: create expr");
-	    control_block_ = control_block::create(expr);
-	 }
+            control_block_ = control_block::create(expr);
+         }
       }
 
       inline void register_local_var(expression_ptr expr)
@@ -19903,19 +19883,16 @@ namespace exprtk
 
       inline bool compile(const std::string& expression_string, expression<T>& expr)
       {
-	 qDebug("exprtk: cleanup");
          state_          .reset();
          error_list_     .clear();
          brkcnt_list_    .clear();
          synthesis_error_.clear();
          sem_            .cleanup();
 
-	 return_cleanup();
+         return_cleanup();
 
-	 qDebug("exprtk: something allocator");
          expression_generator_.set_allocator(node_allocator_);
 
-	 qDebug("exprtk: expression string");
          if (expression_string.empty())
          {
             set_error(
@@ -19932,7 +19909,6 @@ namespace exprtk
             return false;
          }
 
-	 qDebug("exprtk: lexer");
          if (lexer().empty())
          {
             set_error(
@@ -19943,13 +19919,11 @@ namespace exprtk
             return false;
          }
 
-	 qDebug("exprtk: assemblies");
          if (!run_assemblies())
          {
             return false;
          }
 
-	 qDebug("exprtk: init i guess?");
          symtab_store_.symtab_list_ = expr.get_symbol_table_list();
          dec_.clear();
 
@@ -19957,14 +19931,12 @@ namespace exprtk
 
          next_token();
 
-	 qDebug("exprtk: parse_corpus()");
          expression_node_ptr e = parse_corpus();
 
          if ((0 != e) && (token_t::e_eof == current_token().type))
          {
             bool* retinvk_ptr = 0;
 
-	    qDebug("exprtk: if return present");
             if (state_.return_stmt_present)
             {
                dec_.return_present_ = true;
@@ -19973,21 +19945,12 @@ namespace exprtk
                      .return_envelope(e,results_context_,retinvk_ptr);
             }
 
-	    try{
-	       qDebug("exprtk: set expr");
-	       expr.set_expression(e);
-	       qDebug("exprtk: set retinvk");
-	       expr.set_retinvk(retinvk_ptr);
-	    } catch(std::exception& e) {
-	       qDebug("exprtk: caught:");
-	       qDebug(e.what());
-	       Q_ASSERT(false);
-	    }
-	    qDebug("exprtk: register");
+            expr.set_expression(e);
+            expr.set_retinvk(retinvk_ptr);
+
             register_local_vars(expr);
             register_return_results(expr);
 
-	    qDebug("exprtk: bang bang return");
             return !(!expr);
          }
          else

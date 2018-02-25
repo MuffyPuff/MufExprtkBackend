@@ -60,9 +60,9 @@ public: // temp
 	template<typename T>
 	struct symbol_t {
 		symbol_t(const str_t& n, const T& v)
-		        : name(str_t(n)), value(T(v)) {}
+		        : name(n), value(new T(v)) {}
 		str_t           name;
-		T               value;
+		T*              value;
 	};
 protected: // temp
 	typedef symbol_t<num_t> num_sym_t;
@@ -104,16 +104,14 @@ public:
 
 	bool            addVariable(const QString& name, const num_t& value);
 	bool            addConstant(const QString& name, const num_t& value);
-	bool            addStringvar(const QString& name, const QString& value);
+	bool            addString(const QString& name, const QString& value);
 	bool            addVector(const QString& name, const QVector<num_t>& values);
-	bool            addFunction(const QString& name,
-	                            const QString& body,
+	bool            addFunction(const QString& name, const QString& body,
 	                            const QStringList& vars);
 
 	QList<fun_sym_t> getFunctions();
 	QList<num_sym_t> getVariables();
-	QList<num_sym_t> getConstants();
-	QList<str_sym_t> getStringvars();
+	QList<str_sym_t> getStrings();
 	QList<vec_sym_t> getVectors();
 
 	void            run();
@@ -129,7 +127,7 @@ protected:
 	QList<fun_sym_t> _functions;
 	QList<num_sym_t> _variables;
 	QList<num_sym_t> _constants;
-	QList<str_sym_t> _stringvars;
+	QList<str_sym_t> _strings;
 	QList<vec_sym_t> _vectors;
 
 	QString         _input;
