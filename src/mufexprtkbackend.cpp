@@ -30,7 +30,6 @@ MufExprtkBackend::~MufExprtkBackend()
 	_mutex.lock();
 	_abort = true;
 
-	//TODO: cast to symbol_t
 //	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_variables));
 //	destroy<num_t>(static_cast<QList<symbol_t<num_t>>*>(&_constants));
 //	destroy<vec_t>(static_cast<QList<symbol_t<vec_t>>*>(&_vectors));
