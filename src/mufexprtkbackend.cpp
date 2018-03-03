@@ -7,6 +7,10 @@
 
 #include "../include/exprtk.hpp"
 
+/**TODO:
+ * exprtk::collect_functions(expression, function_list)
+ **/
+
 MufExprtkBackend::MufExprtkBackend(QObject* parent, const QString& in)
         : QThread(parent), _input(in), _hasnewinfo(false), _abort(false)
 {
