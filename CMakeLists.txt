@@ -22,8 +22,8 @@ set(CMAKE_AUTOMOC ON)
 add_library(MufExprtkBackend SHARED src/mufexprtkbackend.cpp)
 
 install(TARGETS MufExprtkBackend 
-	LIBRARY DESTINATION /home/muf/Workspace/StrahCalc/lib)
-include_directories(${Qt5Core_INCLUDE_DIRS})       
+	LIBRARY DESTINATION ../../bin)
+include_directories(${Qt5Core_INCLUDE_DIRS})
 
 find_package(Qt5Core)
 

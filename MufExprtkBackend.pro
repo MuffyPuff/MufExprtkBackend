@@ -6,19 +6,19 @@
 
 QT       += core gui widgets
 
-DESTDIR = ../../StrahCalc/lib
+DESTDIR = ../../bin
 
 TARGET = MufExprtkBackend
 TEMPLATE = lib
 
 SOURCES += \
         src/mufexprtkbackend.cpp \
-        include/exprtk.hpp
+        lib/exprtk.hpp
 
 HEADERS += \
         src/mufexprtkbackend.h
 
-INCLUDEPATH += $$PWD/include
+INCLUDEPATH += $$PWD/lib
 
 unix:!symbian {
     maemo5 {
