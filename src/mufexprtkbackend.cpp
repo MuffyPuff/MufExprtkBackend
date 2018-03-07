@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <QStringLiteral>
 
-#include "../include/exprtk.hpp"
+#include "../lib/exprtk.hpp"
 
 /**TODO:
  * exprtk::collect_functions(expression, function_list)

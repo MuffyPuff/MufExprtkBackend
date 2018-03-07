@@ -1,6 +1,6 @@
 OTHER_FILES += \
-            ../MufExprtkBackend/src/mufexprtkbackend.h \
-            ../MufExprtkBackend/src/mufexprtkbackend.cpp \
-            ../MufExprtkBackend/include/exprtk.hpp \
-            ../MufExprtkBackend/CMakeLists.txt \
-            ../MufExprtkBackend/MufExprtkBackend.pro
+            ./lib/MufExprtkBackend/src/mufexprtkbackend.h \
+            ./lib/MufExprtkBackend/src/mufexprtkbackend.cpp \
+            ./lib/MufExprtkBackend/lib/exprtk.hpp \
+            ./lib/MufExprtkBackend/CMakeLists.txt \
+            ./lib/MufExprtkBackend/MufExprtkBackend.pro

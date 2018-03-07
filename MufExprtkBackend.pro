@@ -6,7 +6,7 @@
 
 QT       += core gui widgets
 
-DESTDIR = ../../bin
+DESTDIR = ../../../bin
 
 TARGET = MufExprtkBackend
 TEMPLATE = lib
