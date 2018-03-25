@@ -24,7 +24,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ../../../bin)
 
 find_package(Qt5 COMPONENTS Core REQUIRED)
 
-add_library(MufExprtkBackend SHARED src/mufexprtkbackend.cpp)
+add_library(MufExprtkBackend SHARED src/mufexprtkbackend.cpp include/mufexprtkbackend.h)
 
 include_directories(${Qt5Core_INCLUDE_DIRS})
 
