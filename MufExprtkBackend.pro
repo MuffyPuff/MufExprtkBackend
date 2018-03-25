@@ -16,7 +16,7 @@ SOURCES += \
         lib/exprtk.hpp
 
 HEADERS += \
-        src/mufexprtkbackend.h
+        include/mufexprtkbackend.h
 
 INCLUDEPATH += $$PWD/lib
 
