@@ -243,7 +243,13 @@ MufExprtkBackend::run()
 //			}
 			compositor.add(fn);
 		}
+		exprtk::rtl::io::package<num_t> io_package;
+		exprtk::rtl::io::file::package<num_t> fileio_package;
+		exprtk::rtl::vecops::package<num_t> vecops_package;
 		symbol_table_t& symbol_table = compositor.symbol_table();
+		symbol_table.add_package(io_package);
+		symbol_table.add_package(fileio_package);
+		symbol_table.add_package(vecops_package);
 //		qDebug() << "functions in syt:" << symbol_table.function_count();
 //		qDebug() << "functions in comp:" << compositor.symbol_table().function_count();
 		for (num_sym_t var : variables) {
